@@ -9,7 +9,7 @@
 
 **An enterprise-ready Machine Learning system achieving 99.15% precision in spam detection**
 
-[Live Demo](#) 
+[Live Demo](https://ai-spam-detection.streamlit.app/) • [Documentation](#-installation--deployment) • [Report Bug](https://github.com/riteshgupta-codes/ai-spam-shield/issues) • [Request Feature](https://github.com/riteshgupta-codes/ai-spam-shield/issues)
 
 </div>
 
