@@ -279,25 +279,6 @@ streamlit run app.py
 
 The app will open at `http://localhost:8501`
 
-### Docker Deployment (Optional)
-
-```dockerfile
-# Dockerfile
-FROM python:3.12-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
-COPY . .
-EXPOSE 8501
-CMD ["streamlit", "run", "app.py", "--server.port=8501"]
-```
-
-```bash
-# Build and run
-docker build -t ai-spam-shield .
-docker run -p 8501:8501 ai-spam-shield
-```
 
 ---
 
