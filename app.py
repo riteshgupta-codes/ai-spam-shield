@@ -9,10 +9,16 @@ from streamlit_lottie import st_lottie
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
-# Load NLTK
+# --- NLTK CONFIGURATION (Fixed for Deployment) ---
 ps = PorterStemmer()
-nltk.download('punkt')
-nltk.download('stopwords')
+
+
+try:
+    nltk.download('punkt')
+    nltk.download('punkt_tab')
+    nltk.download('stopwords')
+except Exception as e:
+    st.error(f"Error downloading NLTK data: {e}")
 
 # --- UI CONFIGURATION ---
 st.set_page_config(page_title="AI Spam Shield", page_icon="🛡️", layout="centered")
@@ -47,48 +53,65 @@ def load_lottieurl(url):
     except Exception:
         return None
 
-# Updated to a new, stable Lottie URL
+# Lottie Animation Setup
 lottie_url = "https://lottie.host/74737750-f8f4-419b-b236-09e44d32626e/8O5E9r0Gst.json"
 lottie_processing = load_lottieurl(lottie_url)
 
-# --- LOGIC ---
+# --- NLP PREPROCESSING LOGIC ---
 def transform_text(text):
     text = text.lower()
     text = re.sub(r'\s+', ' ', text)
     tokens = nltk.word_tokenize(text)
-    stop_words = stopwords.words('english')
+    
+    # Filter tokens: alphanumeric, not a stopword, not punctuation
+    stop_words = set(stopwords.words('english'))
     y = [ps.stem(w) for w in tokens if w.isalnum() and w not in stop_words and w not in string.punctuation]
+    
     return " ".join(y)
 
-# Load Models
-tfidf = pickle.load(open('vectorizer.pkl', 'rb'))
-model = pickle.load(open('model.pkl', 'rb'))
+# --- LOAD SERIALIZED MODELS ---
+@st.cache_resource # Use caching to prevent reloading on every click
+def load_models():
+    tfidf = pickle.load(open('vectorizer.pkl', 'rb'))
+    model = pickle.load(open('model.pkl', 'rb'))
+    return tfidf, model
+
+try:
+    tfidf, model = load_models()
+except FileNotFoundError:
+    st.error("Model files not found! Please ensure 'vectorizer.pkl' and 'model.pkl' are in the directory.")
 
 # --- UI BODY ---
 st.title("🛡️ AI Spam Shield")
 st.write("Ensuring your inbox stays clean with advanced machine learning.")
 
-message = st.text_area("Drop your message here...", placeholder="Type or paste a message to analyze...")
+message = st.text_area("Drop your message here...", placeholder="Type or paste a message to analyze...", height=150)
 
 if st.button('Verify Message'):
     if message.strip() == "":
         st.warning("Please enter a message first!")
     else:
-        with st.spinner('Analyzing patterns...'):
-            # SAFETY CHECK: Only show animation if it loaded correctly
+        with st.spinner('Analyzing linguistic patterns...'):
+            # Show processing animation
             if lottie_processing:
                 st_lottie(lottie_processing, height=150, key="loader")
             
-            time.sleep(1.5) 
+            # Artificial delay for better UX
+            time.sleep(1) 
             
+            # Preprocess, Vectorize, and Predict
             transformed_msg = transform_text(message)
             vector_input = tfidf.transform([transformed_msg])
             result = model.predict(vector_input)[0]
 
-        # Step 2: Styled Display
+        # Display Styled Results
         if result == 1:
             st.markdown('<div class="result-box" style="background-color: #ffebee; color: #c62828; border: 2px solid #ef9a9a;">🚨 SPAM DETECTED</div>', unsafe_allow_html=True)
             st.snow() 
         else:
             st.markdown('<div class="result-box" style="background-color: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7;">✅ NOT SPAM</div>', unsafe_allow_html=True)
             st.balloons()
+
+# Footer
+st.markdown("---")
+st.caption("Developed with Python, NLTK & Scikit-Learn | High-Precision Ensemble Model")
